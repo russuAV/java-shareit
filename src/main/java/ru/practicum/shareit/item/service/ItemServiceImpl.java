@@ -11,7 +11,7 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @Slf4j
@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 public class ItemServiceImpl implements ItemService {
     private final UserService userService;
     private final Map<Long, Item> items = new HashMap<>();
+    private final AtomicLong itemIdCounter = new AtomicLong(0);
 
     @Override
     public Item create(Long userId, ItemDto itemDto) {
@@ -34,7 +35,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public Item update(Long userId, Long itemId, ItemDto itemDto) {
         Item item = getItemById(itemId);
-        if (!item.getOwner().getId().equals(userId)) {
+        if (!Objects.equals(item.getOwnerId(), userId)) {
             throw new NotFoundException("Редактировать может только владелец.");
         }
 
@@ -58,7 +59,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<Item> getAllByOwner(Long userId) {
         List<Item> itemsByOwner = items.values().stream()
-                .filter(i -> i.getOwner().getId().equals(userId))
+                .filter(i -> i.getOwnerId().equals(userId))
                 .toList();
 
         log.info("Получен список всех вещей, сдаваемых пользователем с ID {}", userId);
@@ -68,24 +69,22 @@ public class ItemServiceImpl implements ItemService {
     @Override
     public List<Item> search(String text) {
         if (text == null || text.isBlank()) {
-            log.info("По данному тексту ничего не найдено.");
-            return Collections.emptyList();
+            log.info("Пустой запрос для поиска");
+            return List.of();
         }
+        return findAvailableItemsByText(text);
+    }
+
+    public List<Item> findAvailableItemsByText(String text) {
         String lower = text.toLowerCase();
         return items.values().stream()
                 .filter(i -> Boolean.TRUE.equals(i.getAvailable()))
                 .filter(i -> i.getName().toLowerCase().contains(lower) ||
                         i.getDescription().toLowerCase().contains(lower))
-                .collect(Collectors.toList());
+                .toList();
     }
 
-
     public long getNextId() {
-        long currentMaxId = items.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+        return itemIdCounter.incrementAndGet();
     }
 }

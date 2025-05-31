@@ -13,6 +13,5 @@ public class UserDto {
     @Email(message = "Некорректный email")
     @NotNull
     private String email;
-
     private String name;
 }

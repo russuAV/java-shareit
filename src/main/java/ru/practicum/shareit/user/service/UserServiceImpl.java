@@ -2,6 +2,7 @@ package ru.practicum.shareit.user.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.exception.ConflictException;
 import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.user.model.User;
@@ -9,28 +10,25 @@ import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 @Slf4j
 public class UserServiceImpl implements UserService {
     private final Map<Long, User> users = new HashMap<>();
     private final Map<String, User> usersByEmail = new HashMap<>();
+    private final AtomicLong userIdCounter = new AtomicLong(0);
 
     @Override
     public User create(UserDto userDto) {
-        if (users.containsKey(userDto.getId())) {
-            log.error("Ошибка создания пользователя: id {} уже используется", userDto.getId());
-            throw new ValidationException("Пользователь уже зарегистрирован");
-        }
         if (usersByEmail.containsKey(userDto.getEmail())) {
             log.error("Ошибка создания пользователя: email {} уже используется", userDto.getEmail());
-            throw new ValidationException("Данный email уже используется");
+            throw new ConflictException("Данный email уже используется");
         }
 
-        Long id = getNextId();
         User user = UserMapper.toUser(userDto);
-        user.setId(id);
-        users.put(id, user);
+        user.setId(getNextId());
+        users.put(user.getId(), user);
         usersByEmail.put(user.getEmail(), user);
 
         log.info("Пользователь успешно создан с id: {}, email: {}",
@@ -43,33 +41,30 @@ public class UserServiceImpl implements UserService {
         if (userDto.getId() == null || userDto.getId() == 0) {
             throw new ValidationException("id должен быть указан");
         }
-        User userWithOldData = users.get(userDto.getId());
-        if (userWithOldData == null) {
+        User existingUser = users.get(userDto.getId());
+        if (existingUser == null) {
             log.error("Пользователь не найден");
             throw new NotFoundException("Пользователь не найден");
         }
         // проверяем доступность email
-        if (userDto.getEmail() != null
-                && !userDto.getEmail().equals(userWithOldData.getEmail())) {
+        if (!Objects.equals(userDto.getEmail(), existingUser.getEmail())) {
             if (usersByEmail.containsKey(userDto.getEmail())) {
                 User existingUserByEmail = usersByEmail.get(userDto.getEmail());
-                if (!existingUserByEmail.getId().equals(userDto.getId())) {
+                if (!Objects.equals(existingUserByEmail.getId(), userDto.getId())) {
                     log.error("Ошибка обновления: email {} уже используется", userDto.getEmail());
-                    throw new ValidationException("Этот e-mail уже используется");
+                    throw new ConflictException("Этот e-mail уже используется");
                 }
             }
+            usersByEmail.remove(existingUser.getEmail());
+            existingUser.setEmail(userDto.getEmail());
+            usersByEmail.put(existingUser.getEmail(), existingUser);
         }
 
-        User updateUser = UserMapper.updateUserFields(userWithOldData, userDto);
+        // Обновляем только изменяемые поля
+        UserMapper.updateUserFields(existingUser, userDto);
 
-        // удаляем старого пользователя и возвращаем нового
-        users.remove(userWithOldData.getId());
-        usersByEmail.remove(userWithOldData.getEmail());
-        users.put(userDto.getId(), updateUser);
-        usersByEmail.put(userDto.getEmail(), updateUser);
-
-        log.info("Пользователь с id {} успешно обновлён", userWithOldData.getId());
-        return updateUser;
+        log.info("Пользователь с id {} успешно обновлён", existingUser.getId());
+        return existingUser;
     }
 
     @Override
@@ -99,11 +94,6 @@ public class UserServiceImpl implements UserService {
     }
 
     public long getNextId() {
-        long currentMaxId = users.keySet()
-                .stream()
-                .mapToLong(id -> id)
-                .max()
-                .orElse(0);
-        return ++currentMaxId;
+        return userIdCounter.incrementAndGet();
     }
 }

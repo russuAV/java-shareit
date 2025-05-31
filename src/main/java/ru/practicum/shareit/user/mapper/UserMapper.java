@@ -20,14 +20,9 @@ public class UserMapper {
                 .build();
     }
 
-    public static User updateUserFields(User user, UserDto userDto) {
-        if (userDto.getEmail() != null) {
-            user.setEmail(userDto.getEmail());
-        }
+    public static void updateUserFields(User user, UserDto userDto) {
         if (userDto.getName() != null) {
             user.setName(userDto.getName());
         }
-
-        return user;
     }
 }
