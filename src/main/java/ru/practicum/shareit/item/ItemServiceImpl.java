@@ -101,7 +101,7 @@ public class ItemServiceImpl implements ItemService {
         }
 
         Comment comment = Comment.builder()
-                .text(dto.getText())
+                .message(dto.getText())
                 .author(author)
                 .item(item)
                 .created(LocalDateTime.now())

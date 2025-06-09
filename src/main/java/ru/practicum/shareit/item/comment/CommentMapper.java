@@ -11,7 +11,7 @@ public class CommentMapper {
     public static CommentDto toDto(Comment comment) {
         return CommentDto.builder()
                 .id(comment.getId())
-                .text(comment.getText())
+                .text(comment.getMessage())
                 .authorName(comment.getAuthor().getName())
                 .created(comment.getCreated())
                 .build();
@@ -19,7 +19,7 @@ public class CommentMapper {
 
     public static Comment toComment(CommentDto dto, Item item, User author) {
         return Comment.builder()
-                .text(dto.getText())
+                .message(dto.getText())
                 .item(item)
                 .author(author)
                 .created(LocalDateTime.now())

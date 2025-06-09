@@ -10,8 +10,10 @@ public interface ItemRepository extends JpaRepository<Item, Long> {
 
     List<Item> findAllByOwnerId(Long userId);
 
-    @Query("SELECT i FROM Item i " +
-            "WHERE i.available = true AND " +
-            "(LOWER(i.name) LIKE %:text% OR LOWER(i.description) LIKE %:text%)")
+    @Query("""
+                SELECT i FROM Item i
+                WHERE i.available = true
+                AND (LOWER(i.name) LIKE %:text% OR LOWER(i.description) LIKE %:text%)
+            """)
     List<Item> search(@Param("text") String text);
 }

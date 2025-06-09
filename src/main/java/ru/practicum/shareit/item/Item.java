@@ -1,17 +1,15 @@
 package ru.practicum.shareit.item;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.item.comment.Comment;
 import ru.practicum.shareit.user.User;
 
 import java.util.List;
 
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -47,4 +45,17 @@ public class Item {
 
     @Transient
     private List<Comment> comments;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Item item = (Item) o;
+        return id != null && id.equals(item.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return 15;
+    }
 }

@@ -8,26 +8,32 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
-    @Query("SELECT b FROM Booking b " +
-            "WHERE b.item.id = :itemId " +
-            "AND b.status IN ('APPROVED', 'WAITING') " +
-            "AND b.end > :start AND b.start < :end")
+    @Query("""
+            SELECT b FROM Booking b
+            WHERE b.item.id = :itemId
+            AND b.status IN ('APPROVED', 'WAITING')
+            AND b.end > :start AND b.start < :end
+            """)
     List<Booking> findOverlappingBookings(@Param("itemId") Long itemId,
                                           @Param("start") LocalDateTime start,
                                           @Param("end") LocalDateTime end);
 
-    @Query("SELECT b FROM Booking b " +
-            "WHERE b.item.id = :itemId " +
-            "AND b.start < :now " +
-            "AND b.status = 'APPROVED' " +
-            "ORDER BY b.start DESC LIMIT 1")
+    @Query("""
+            SELECT b FROM Booking b
+            WHERE b.item.id = :itemId
+            AND b.start < :now
+            AND b.status = 'APPROVED'
+            ORDER BY b.start DESC LIMIT 1
+            """)
     Booking findLastBooking(@Param("itemId") Long itemId, @Param("now") LocalDateTime now);
 
-    @Query("SELECT b FROM Booking b " +
-            "WHERE b.item.id = :itemId " +
-            "AND b.start > :now " +
-            "AND b.status = 'APPROVED' " +
-            "ORDER BY b.start ASC LIMIT 1")
+    @Query("""
+            SELECT b FROM Booking b
+            WHERE b.item.id = :itemId
+            AND b.start > :now
+            AND b.status = 'APPROVED'
+            ORDER BY b.start ASC LIMIT 1
+            """)
     Booking findNextBooking(@Param("itemId") Long itemId, @Param("now") LocalDateTime now);
 
     List<Booking> findByBookerIdOrderByStartDesc(Long bookerId);
