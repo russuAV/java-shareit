@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: dbuser
+      POSTGRES_PASSWORD: 12345
+      POSTGRES_DB: shareit
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  server:
+    build:
+      context: ./server
+    ports:
+      - "9090:9090"              # <-- теперь 9090!
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/shareit
+      SPRING_DATASOURCE_USERNAME: dbuser
+      SPRING_DATASOURCE_PASSWORD: 12345
+      SERVER_PORT: 9090          # <-- важно! Или укажи server.port в application.properties
+      TZ: "Asia/Yekaterinburg"
+
+  gateway:
+    build:
+      context: ./gateway
+    ports:
+      - "8080:8080"              # <-- оставляем 8080!
+    depends_on:
+      - server
+    environment:
+      SHAREIT_SERVER_URL: http://server:9090   # <-- важно! Ссылаемся на server с новым портом
+
+volumes:
+  pg_data:
