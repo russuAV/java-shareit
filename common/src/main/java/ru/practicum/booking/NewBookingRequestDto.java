@@ -1,6 +1,7 @@
 package ru.practicum.booking;
 
 import jakarta.validation.constraints.AssertTrue;
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -18,9 +19,11 @@ public class NewBookingRequestDto {
     private Long itemId;
 
     @NotNull
+    @Future
     private LocalDateTime start;
 
     @NotNull
+    @Future
     private LocalDateTime end;
 
     @AssertTrue(message = "Выберите корректный срок аренды.")

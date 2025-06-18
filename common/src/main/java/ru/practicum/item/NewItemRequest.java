@@ -14,11 +14,9 @@ import lombok.NoArgsConstructor;
 public class NewItemRequest {
 
     @NotBlank
-    @NotNull
     private String name;
 
     @NotBlank
-    @NotNull
     private String description;
 
     @NotNull
